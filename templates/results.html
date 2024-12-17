@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Scraped Data</title>
+</head>
+<body>
+    <h1>Scraped Data from {{ url }}</h1>
+
+    {% if 'error' in data %}
+        <p>Error: {{ data['error'] }}</p>
+    {% else %}
+        {% if data.links %}NI
+            <h2>Links:</h2>
+            <ul>
+                {% for link in data.links %}
+                    <li><a href="{{ link }}" target="_blank">{{ link }}</a></li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% if data.headings %}
+            <h2>Headings:</h2>
+            {% for level, headings in data.headings.items() %}
+                <h3>{{ level.upper() }}:</h3>
+                <ul>
+                    {% for heading in headings %}
+                        <li>{{ heading }}</li>
+                    {% endfor %}
+                </ul>
+            {% endfor %}
+        {% endif %}
+
+        {% if data.images %}
+            <h2>Images:</h2>
+            <ul>
+                {% for image in data.images %}
+                    <li><img src="{{ image }}" alt="Image" style="max-width:200px;"></li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% if data.paragraphs %}
+            <h2>Paragraphs:</h2>
+            <ul>
+                {% for paragraph in data.paragraphs %}
+                    <li>{{ paragraph }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        {% if data.keyword_links %}
+            <h2>Links Containing Keyword:</h2>
+            <ul>
+                {% for link in data.keyword_links %}
+                    <li><a href="{{ link }}" target="_blank">{{ link }}</a></li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    {% endif %}
+
+    <a href="/">Back to Home</a>
+</body>
+</html>

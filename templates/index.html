@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Web Scraper</title>
+</head>
+<body>
+    <h1>Web Scraper Tool</h1>
+    <form method="POST" action="/">
+        <label for="url">Enter URL:</label>
+        <input type="url" name="url" id="url" required><br><br>
+
+        <label>Select Data to Extract:</label><br>
+        <input type="checkbox" name="filter" value="links"> Links<br>
+        <input type="checkbox" name="filter" value="headings"> Headings<br>
+        <input type="checkbox" name="filter" value="images"> Images<br>
+        <input type="checkbox" name="filter" value="paragraphs"> Paragraphs<br>
+        <label for="keyword">Keyword (optional for links):</label>
+        <input type="text" name="keyword"><br><br>
+
+        <button type="submit">Scrape</button>
+    </form>
+</body>
+</html>

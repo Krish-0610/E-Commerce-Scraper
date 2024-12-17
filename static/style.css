@@ -1,0 +1,126 @@
+/* General Reset */
+body, h1, h2, h3, p, ul, li, a, input, button, form {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body Styling */
+body {
+    font-family: 'Arial', sans-serif;
+    line-height: 1.6;
+    background-color: #f4f4f9;
+    color: #333;
+    padding: 20px;
+}
+
+/* Header */
+h1, h2 {
+    color: #4CAF50;
+    text-align: center;
+}
+
+/* Links */
+a {
+    color: #4CAF50;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Form Styling */
+form {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+label {
+    font-weight: bold;
+    display: block;
+    margin-bottom: 8px;
+}
+
+input[type="url"], input[type="text"], button {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    font-size: 16px;
+}
+
+button {
+    background: #4CAF50;
+    color: white;
+    cursor: pointer;
+    border: none;
+}
+
+button:hover {
+    background: #45a049;
+}
+
+/* Checkbox Styling */
+input[type="checkbox"] {
+    margin-right: 8px;
+}
+
+label[for="keyword"] {
+    margin-top: 15px;
+}
+
+/* Scraped Data Display */
+h2 {
+    margin-top: 20px;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+
+li {
+    background: #fff;
+    margin: 10px 0;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+img {
+    max-width: 100%;
+    display: block;
+    margin: 0 auto;
+    border-radius: 5px;
+}
+
+/* Back Button */
+a[href="/"] {
+    display: inline-block;
+    margin: 20px 0;
+    padding: 10px 15px;
+    background: #4CAF50;
+    color: white;
+    border-radius: 5px;
+    text-align: center;
+}
+
+a[href="/"]:hover {
+    background: #45a049;
+}
+
+/* Error Message */
+.error {
+    color: red;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 10px;
+}
