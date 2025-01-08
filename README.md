@@ -26,3 +26,9 @@ The **E-Commerce Scraper** is a tool designed to extract data from e-commerce we
 - Limits on entries per page.
 
 ---
+
+## Future Enhancements
+
+- Add support for multiple websites in a single session.
+- Implement user authentication for personalized settings.
+- Support for advanced scraping options (e.g., filters, sorting).
