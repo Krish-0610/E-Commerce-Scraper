@@ -1,0 +1,20 @@
+{
+    "amazon.in": {
+        "product_container": ".a-section a-spacing-small a-spacing-top-small",
+        "name": "h2 .a-size-medium a-spacing-none a-color-base a-text-normal",
+        "price": ".a-price-whole",
+        "rating": ".a-icon-alt"
+    },
+    "flipkart.com": {
+        "product_container": ".hCKiGj",
+        "name": ".WKTcLC",
+        "price": ".Nx9bqj",
+        "rating": ".XQDdHH _1Quie7"
+    },
+    "walmart.com": {
+        "product_container": ".search-result-gridview-item",
+        "name": ".product-title-link span",
+        "price": ".price-characteristic",
+        "rating": ".stars-reviews-count"
+    }
+}
