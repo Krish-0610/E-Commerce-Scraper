@@ -1,6 +1,5 @@
 import json
 from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -26,8 +25,9 @@ class EcommerceScraper:
             chrome_options.add_argument('--headless')
         chrome_options.add_argument('--no-sandbox')
         chrome_options.add_argument('--disable-dev-shm-usage')
-        chrome_options.add_argument('--disable-notifications')  # Block notifications
-        chrome_options.add_argument('--disable-popup-blocking')  # Handle popups
+        chrome_options.add_argument('--disable-notifications')
+        chrome_options.add_argument('--disable-popup-blocking')
+        chrome_options.add_argument("--disable-blink-features=AutomationControlled")  # Prevent bot detection
         
         # Initialize the Chrome WebDriver
         self.driver = webdriver.Chrome(options=chrome_options)
@@ -36,21 +36,23 @@ class EcommerceScraper:
         # Common e-commerce XPath patterns
         self.common_xpaths = {
             'flipkart': {
-                'product_container': "//div[contains(@class, '_1AtVbE')]",
-                'product_name': ".//a[contains(@class, 's1Q9rs')]",
-                'price': ".//div[contains(@class, '_30jeq3')]",
-                'original_price': ".//div[contains(@class, '_3I9_wc')]",
-                'discount': ".//div[contains(@class, '_3Ay6Sb')]",
-                'rating': ".//div[contains(@class, '_3LWZlK')]",
-                'reviews_count': ".//span[contains(@class, '_2_R_DZ')]"
+                'product_container': "//div[contains(@class, 'cPHDOP col-12-12')]",
+                'product_name': ".//div[contains(@class, 'KzDlHZ')]",
+                'price': ".//div[contains(@class, 'Nx9bqj _4b5DiR')]",
+                # 'original_price': ".//div[contains(@class, '_3I9_wc')]",
+                # 'discount': ".//div[contains(@class, '_3Ay6Sb')]",
+                # 'rating': ".//div[contains(@class, '_3LWZlK')]",
+                'reviews_count': ".//span[contains(@class, 'Wphh3N')]",
+                'next_page': "//a[contains(@class, '_9QVEpD')]"  # Next page button
             },
             'amazon': {
                 'product_container': "//div[contains(@class, 's-result-item')]",
                 'product_name': ".//span[contains(@class, 'a-text-normal')]",
                 'price': ".//span[contains(@class, 'a-price-whole')]",
-                'original_price': ".//span[contains(@class, 'a-text-strike')]",
-                'rating': ".//span[contains(@class, 'a-icon-alt')]",
-                'reviews_count': ".//span[contains(@class, 'a-size-base')]"
+                # 'original_price': ".//span[contains(@class, 'a-text-strike')]",
+                # 'rating': ".//span[contains(@class, 'a-icon-alt')]",
+                'reviews_count': ".//span[contains(@class, 'a-size-base')]",
+                'next_page': "//a[contains(@class, 's-pagination-next')]"  # Next page button
             },
             # Add more websites as needed
         }
@@ -58,11 +60,10 @@ class EcommerceScraper:
         self.logger.info("E-commerce scraper initialized successfully")
 
     def detect_website(self, url: str) -> str:
-        """Detect which e-commerce website we're dealing with."""
+        # Detect which e-commerce website we're dealing with.
         domain_mapping = {
             'flipkart.com': 'flipkart',
             'amazon.com': 'amazon',
-            # Add more mappings as needed
         }
         
         for domain, site in domain_mapping.items():
@@ -70,158 +71,95 @@ class EcommerceScraper:
                 return site
         return 'generic'
 
-    def handle_popup(self):
-        """Handle common e-commerce popup patterns."""
-        common_popup_patterns = [
-            "//button[contains(@class, 'close')]",
-            "//button[contains(@class, 'popup-close')]",
-            "//div[contains(@class, 'modal')]//button",
-            "//button[contains(text(), 'No thanks')]",
-            "//button[contains(text(), 'Close')]"
-        ]
-        
-        for pattern in common_popup_patterns:
-            try:
-                popup = self.driver.find_element(By.XPATH, pattern)
-                popup.click()
-                self.logger.info("Popup handled successfully")
-                break
-            except NoSuchElementException:
-                continue
-
     def navigate_to_page(self, url: str):
+        # Navigate to a given URL and handle common popups.
         try:
             self.driver.get(url)
             self.logger.info(f"Navigated to {url}")
             
             # Handle potential popups
             time.sleep(2)
-            self.handle_popup()
             
             # Wait for main content to load
             self.wait_for_element("//body")
-            time.sleep(2)
         except Exception as e:
             self.logger.error(f"Error navigating to {url}: {str(e)}")
-            raise
-
-    def wait_for_element(self, xpath: str) -> Optional[object]:
-        try:
-            element = self.wait.until(
-                EC.presence_of_element_located((By.XPATH, xpath))
-            )
-            return element
-        except TimeoutException:
-            self.logger.error(f"Timeout waiting for element: {xpath}")
+    
+    def wait_for_element(self,element, xpath: str) -> Optional[object]:
+        # Wait for an element to appear on the page.
+         try:
+            return self.wait.until(EC.presence_of_element_located((By.XPATH, xpath)))
+         except TimeoutException:
+            self.logger.warning(f"Element not found: {xpath}")
             return None
-
+    
     def extract_text_safely(self, element, xpath: str) -> Optional[str]:
-        """Safely extract text from an element using relative XPath."""
+        # Safely extract text from an element using XPath.
         try:
             found_element = element.find_element(By.XPATH, xpath)
-            return found_element.text.strip()
-        except (NoSuchElementException, AttributeError):
+            return found_element.text.strip() if found_element else None
+        except NoSuchElementException:
             return None
 
-    def extract_product_data(self, url: str) -> List[Dict]:
-        """Extract product data using website-specific XPaths."""
+    def extract_product_data(self, url: str, max_pages=2) -> List[Dict]:
+        # Extract product data from e-commerce search pages
         website = self.detect_website(url)
         xpaths = self.common_xpaths.get(website, {})
-        
-        if not xpaths:
-            self.logger.warning(f"No predefined XPaths for {website}. Using generic patterns.")
-            xpaths = {
-                'product_container': "//div[contains(@class, 'product') or contains(@class, 'item')]",
-                'product_name': ".//h2|.//h3|.//a[contains(@class, 'title')]",
-                'price': ".//span[contains(@class, 'price')]|.//div[contains(@class, 'price')]",
-                'rating': ".//div[contains(@class, 'rating')]|.//span[contains(@class, 'rating')]"
-            }
 
-        try:
-            # Wait for product containers to load
-            containers = self.wait.until(
-                EC.presence_of_all_elements_located(
-                    (By.XPATH, xpaths['product_container'])
-                )
-            )
-            
-            products = []
-            for container in containers:
-                product = {}
-                
-                # Extract each field using relative XPaths
-                for field, xpath in xpaths.items():
-                    if field != 'product_container':
-                        value = self.extract_text_safely(container, xpath)
-                        if value:
-                            product[field] = value
-                
-                if product:  # Only add if we found any data
-                    products.append(product)
-                    
-            self.logger.info(f"Extracted {len(products)} products")
-            return products
-            
-        except Exception as e:
-            self.logger.error(f"Error during data extraction: {str(e)}")
+        if not xpaths:
+            self.logger.warning(f"No predefined XPaths for {website}. Using default patterns.")
             return []
 
-    def scroll_page(self, scroll_pause=1.0, max_scrolls=None):
-        """Scroll the page to load dynamic content."""
-        last_height = self.driver.execute_script("return document.body.scrollHeight")
-        scroll_count = 0
-        
-        while True:
-            # Scroll down
-            self.driver.execute_script("window.scrollTo(0, document.body.scrollHeight);")
-            time.sleep(scroll_pause)
-            
-            # Handle any popups that might appear during scrolling
-            self.handle_popup()
-            
-            # Calculate new scroll height
-            new_height = self.driver.execute_script("return document.body.scrollHeight")
-            scroll_count += 1
-            
-            if new_height == last_height or (max_scrolls and scroll_count >= max_scrolls):
-                break
-            last_height = new_height
-            
-        self.logger.info(f"Completed page scrolling after {scroll_count} scrolls")
+        products = []
+        current_page = 1
 
-    def save_to_json(self, data: List[Dict], filename: str, pretty: bool = True):
-        try:
-            with open(filename, 'w', encoding='utf-8') as f:
-                if pretty:
-                    json.dump(data, f, indent=2, ensure_ascii=False)
+        while current_page <= max_pages:
+            self.logger.info(f"Scraping page {current_page}...")
+            self.navigate_to_page(url)
+
+            # Extract products
+            containers = self.wait.until(
+                EC.presence_of_all_elements_located((By.XPATH, xpaths['product_container']))
+            )
+
+            for container in containers:
+                product = {}
+                for field, xpath in xpaths.items():
+                    if field not in ['product_container', 'next_page']:
+                        product[field] = self.extract_text_safely(container, xpath)
+
+                if product:
+                    products.append(product)
+
+            # Move to next page
+            try:
+                next_button = self.driver.find_element(By.XPATH, xpaths['next_page'])
+                if next_button:
+                    next_button.click()
+                    time.sleep(3)
+                    current_page += 1
                 else:
-                    json.dump(data, f, ensure_ascii=False)
-            
-            self.logger.info(f"Saved {len(data)} products to {filename}")
-            
-        except Exception as e:
-            self.logger.error(f"Error saving data: {str(e)}")
-            raise
+                    break  # No more pages
+            except NoSuchElementException:
+                break  # No "Next" button found
+
+        self.logger.info(f"Extracted {len(products)} products.")
+        return products
+    
+    def save_to_json(self, data: List[Dict], filename: str):
+        # Save data to JSON file.
+        with open(filename, 'w', encoding='utf-8') as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        self.logger.info(f"Saved {len(data)} products to {filename}")
 
     def save_to_csv(self, data: List[Dict], filename: str):
-        try:
-            df = pd.DataFrame(data)
-            df = df.replace(r'^\s*$', None, regex=True)
-            df.to_csv(filename, index=False, na_rep='N/A')
-            
-            # Log data quality statistics
-            self.logger.info("Data quality report:")
-            for column in df.columns:
-                missing = df[column].isna().sum()
-                total = len(df)
-                self.logger.info(f"{column}: {total-missing}/{total} values present ({missing} missing)")
-                
-        except Exception as e:
-            self.logger.error(f"Error saving data: {str(e)}")
-            raise
+        # Save data to CSV file.
+        df = pd.DataFrame(data)
+        df.to_csv(filename, index=False)
+        self.logger.info(f"Saved {len(data)} products to {filename}")
 
     def close(self):
-        """Clean up resources."""
+        # Close the browser.
         self.driver.quit()
         self.logger.info("Browser closed")
 
@@ -232,16 +170,13 @@ if __name__ == "__main__":
     try:
         # Example URLs for different e-commerce sites
         urls = [
-            "https://www.flipkart.com/search?q=laptops",
-            "https://www.amazon.com/s?k=laptops"
+            "https://www.flipkart.com/search?q=laptops"
+            # "https://www.amazon.com/s?k=laptops"
         ]
         
         for url in urls:
-            scraper.navigate_to_page(url)
-            scraper.scroll_page(max_scrolls=3)  # Limit scrolling for testing
-            data = scraper.extract_product_data(url)
-            
-            # Save data
+            data = scraper.extract_product_data(url, max_pages=2)
+
             site_name = scraper.detect_website(url)
             scraper.save_to_json(data, f"{site_name}_products.json")
             scraper.save_to_csv(data, f"{site_name}_products.csv")
