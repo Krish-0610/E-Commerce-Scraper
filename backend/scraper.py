@@ -32,7 +32,7 @@ def scrape_ecom(url, search_query):
 
     # Set up Selenium
     chrome_options = Options()
-    chrome_options.add_argument("--headless")
+    # chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
     chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
 
@@ -76,16 +76,3 @@ def scrape_ecom(url, search_query):
     finally:
         driver.quit()
 
-
-# Example usage
-url = "https://www.amazon.in/"
-search_query = "laptop"
-data = scrape_ecom(url, search_query)
-
-# Save to CSV
-with open("ecommerce_products.csv", "w", newline="", encoding="utf-8") as file:
-    writer = csv.writer(file)
-    writer.writerow(["Title", "Price", "Rating"])
-    writer.writerows(data)
-
-print("✅ Data saved to ecommerce_products.csv")

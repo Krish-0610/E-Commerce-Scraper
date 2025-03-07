@@ -3,19 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Scraper</title>
+    <title>Web Scraper</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
     <div class="container">
-        <h1>Product Scraper</h1>
-        <form id="searchForm">
-            <input type="text" id="searchInput" placeholder="Enter product name..." required>
-            <button type="submit">Search</button>
-        </form>
-        <div id="loading" style="display: none;">Loading...</div>
-        <div id="results"></div>
+        <h1>Amazon & Flipkart Scraper</h1>
+        <input type="text" id="searchQuery" placeholder="Enter product name..." />
+        <select id="platform">
+            <option value="amazon">Amazon</option>
+            <option value="flipkart">Flipkart</option>
+        </select>
+        <button onclick="searchProducts()">Search</button>
+
+        <table id="resultsTable">
+            <thead>
+                <tr>
+                    <th>Title</th>
+                    <th>Price</th>
+                    <th>Rating</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
     </div>
 
     <script src="script.js"></script>

@@ -1,39 +1,67 @@
-document.getElementById("searchForm").addEventListener("submit", async function (e) {
-    e.preventDefault();
+document.addEventListener("DOMContentLoaded", function () {
+    async function searchProducts() {
+        const query = document.getElementById("searchQuery").value.trim();
+        const platform = document.getElementById("platform").value;
+        const resultsTable = document.getElementById("resultsTable").getElementsByTagName("tbody")[0];
 
-    let query = document.getElementById("searchInput").value;
-    let resultsDiv = document.getElementById("results");
-    let loading = document.getElementById("loading");
-
-    resultsDiv.innerHTML = ""; // Clear previous results
-    loading.style.display = "block"; // Show loading message
-
-    try {
-        let response = await fetch(`http://127.0.0.1:5000/scrape?query=${query}`);
-        let data = await response.json();
-
-        loading.style.display = "none"; // Hide loading
-
-        if (data.results.length === 0) {
-            resultsDiv.innerHTML = "<p>No results found.</p>";
+        if (!query) {
+            alert("Please enter a product name.");
             return;
         }
 
-        data.results.forEach(product => {
-            resultsDiv.innerHTML += `
-                <div class="product">
-                    <h3>${product.title}</h3>
-                    <p><strong>Price:</strong> ₹${product.price}</p>
-                    <p><strong>Rating:</strong> ${product.rating}</p>
-                    <a href="${product.link}" target="_blank">View on Amazon</a>
-                </div>
-            `;
-        });
-    } catch (error) {
-        loading.style.display = "none";
-        resultsDiv.innerHTML = "<p>Error fetching data.</p>";
+        // Clear previous results
+        resultsTable.innerHTML = "<tr><td colspan='3'>Loading...</td></tr>";
+
+        // Prepare request payload
+        const requestData = {
+            platform: platform,
+            query: query
+        };
+
+        console.log("Sending request with data:", requestData);
+
+        try {
+            // Send POST request to the API
+            const response = await fetch("http://127.0.0.1:5000/scrape", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(requestData)
+            });
+
+            console.log("Received response:", response);
+
+            if (!response.ok) {
+                throw new Error("Failed to fetch data. Please try again.");
+            }
+
+            const data = await response.json();
+            console.log("Received data:", data);
+
+            // Clear loading text
+            resultsTable.innerHTML = "";
+
+            if (data.length === 0) {
+                resultsTable.innerHTML = "<tr><td colspan='3'>No results found.</td></tr>";
+                return;
+            }
+
+            // Populate table with results
+            data.forEach(product => {
+                const row = resultsTable.insertRow();
+                row.innerHTML = `
+                    <td>${product.title || "N/A"}</td>
+                    <td>${product.price || "N/A"}</td>
+                    <td>${product.rating || "N/A"}</td>
+                `;
+            });
+        } catch (error) {
+            console.error("Error:", error);
+            resultsTable.innerHTML = `<tr><td colspan='3' style="color: red;">Error: ${error.message}</td></tr>`;
+        }
     }
+
+    // Expose function to global scope
+    window.searchProducts = searchProducts;
 });
-
-
-

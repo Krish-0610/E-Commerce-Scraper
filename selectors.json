@@ -4,7 +4,7 @@
         "product_container": "//div[@data-component-type='s-search-result']",
         "title": ".//h2[@class='a-size-medium a-spacing-none a-color-base a-text-normal']",
         "price": ".//span[@class='a-price-whole']",
-        "rating": ".//div[@class='a-row a-size-base']//span"
+        "rating": ".//div[@class='a-row a-size-base']"
     },
     "flipkart": {
         "search_box": "//*[@name='q']",
