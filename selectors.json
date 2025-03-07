@@ -1,20 +1,16 @@
 {
-    "amazon.in": {
-        "product_container": ".a-section a-spacing-small a-spacing-top-small",
-        "name": "h2 .a-size-medium a-spacing-none a-color-base a-text-normal",
-        "price": ".a-price-whole",
-        "rating": ".a-icon-alt"
+    "amazon": {
+        "search_box": "//*[@id='twotabsearchtextbox']",
+        "product_container": "//div[@data-component-type='s-search-result']",
+        "title": ".//h2[@class='a-size-medium a-spacing-none a-color-base a-text-normal']",
+        "price": ".//span[@class='a-price-whole']",
+        "rating": ".//div[@class='a-row a-size-base']//span"
     },
-    "flipkart.com": {
-        "product_container": ".hCKiGj",
-        "name": ".WKTcLC",
-        "price": ".Nx9bqj",
-        "rating": ".XQDdHH _1Quie7"
-    },
-    "walmart.com": {
-        "product_container": ".search-result-gridview-item",
-        "name": ".product-title-link span",
-        "price": ".price-characteristic",
-        "rating": ".stars-reviews-count"
+    "flipkart": {
+        "search_box": "//*[@name='q']",
+        "product_container": "//div[contains(@class, '_1AtVbE')]",
+        "title": ".//a[contains(@class,'IRpwTa')]",
+        "price": ".//div[contains(@class, '_30jeq3')]",
+        "rating": ".//a[contains(@class,'IRpwTa')]"
     }
 }

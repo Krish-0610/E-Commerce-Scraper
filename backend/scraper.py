@@ -1,65 +1,91 @@
 import time
 import csv
+import json
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.keys import Keys
+from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.chrome.service import Service
+from urllib.parse import urlparse
 
-chrome_options = Options()
-chrome_options.add_argument("--headless")
-chrome_options.add_argument("--disable-blink-features=AutomationControlled")  # Avoid detection
-chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64)")  # Change user agent
+# Load selectors from JSON
+with open("selectors.json", "r") as f:
+    SELECTORS = json.load(f)
 
-def scrape_amazon(search_query, max_pages=2):
+def get_domain(url):
+    """Returns the e-commerce domain (amazon, flipkart) based on the URL."""
+    parsed_url = urlparse(url).netloc
+    if "amazon" in parsed_url:
+        return "amazon"
+    elif "flipkart" in parsed_url:
+        return "flipkart"
+    else:
+        return None
 
-    # Setup WebDriver
+def scrape_ecom(url, search_query):
+    """Scrapes product details from Amazon or Flipkart based on the URL."""
+    domain = get_domain(url)
+    if not domain or domain not in SELECTORS:
+        print("Unsupported domain. Only Amazon and Flipkart are supported.")
+        return []
+
+    # Set up Selenium
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-blink-features=AutomationControlled")
+    chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
-    # Open Amazon
-    url = "https://www.amazon.in/"
-    driver.get(url)
-    time.sleep(2)
 
-    # Search for a product
-    search_box = driver.find_element(By.ID, "twotabsearchtextbox")
-    search_box.send_keys(search_query)
-    search_box.send_keys(Keys.RETURN)
+    try:
+        driver.get(url)
+        time.sleep(2)
 
-    time.sleep(3)  # Wait for results
+        # Use selectors from JSON
+        search_box_xpath = SELECTORS[domain]["search_box"]
+        product_container_xpath = SELECTORS[domain]["product_container"]
+        title_xpath = SELECTORS[domain]["title"]
+        price_xpath = SELECTORS[domain]["price"]
+        rating_xpath = SELECTORS[domain]["rating"]
 
-    # Extract product containers
+        # Perform search
+        search_box = driver.find_element(By.XPATH, search_box_xpath)
+        search_box.send_keys(search_query)
+        search_box.send_keys(Keys.RETURN)
+        time.sleep(3)
 
-    data = []
-    for i in range(1,max_pages+1):
-        print("Scraping page",i,"....")
-        products = driver.find_elements(By.XPATH, "//div[@data-component-type='s-search-result']")
+        # Extract product details
+        products = []
+        product_elements = driver.find_elements(By.XPATH, product_container_xpath)
 
-        for product in products:
+        for product in product_elements[:5]:  # Limit results
             try:
-                title = product.find_element(By.XPATH, ".//h2[@class='a-size-medium a-spacing-none a-color-base a-text-normal']").text
-            except:
-                print("NONE")
-                title = "N/A"
+                title = product.find_element(By.XPATH, title_xpath).text
+                price = product.find_element(By.XPATH, price_xpath).text
+                rating = product.find_element(By.XPATH, rating_xpath).text
 
-            try:
-                price = product.find_element(By.XPATH, ".//span[@class='a-price-whole']").text
-            except:
-                price = "N/A"
+                products.append([title, price, rating])
 
-            try:
-                rating = product.find_element(By.XPATH, ".//div[@class='a-row a-size-base']//span").text
-            except:
-                rating = "N/A"
+            except Exception as e:
+                print(f"Skipping a product due to error: {e}")
 
-            data.append([title, price, rating])
-        try:
-            next_button = driver.find_element(By.XPATH, "//a[contains(@class,'s-pagination-item s-pagination-next s-pagination-button s-pagination-button-accessibility s-pagination-separator')]")
-            next_button.click()
-            time.sleep(3)
-        except:
-            print("No more pages found.")
-            break
-    driver.quit()
-    return data
+        return products
+
+    finally:
+        driver.quit()
+
+
+# Example usage
+url = "https://www.amazon.in/"
+search_query = "laptop"
+data = scrape_ecom(url, search_query)
+
+# Save to CSV
+with open("ecommerce_products.csv", "w", newline="", encoding="utf-8") as file:
+    writer = csv.writer(file)
+    writer.writerow(["Title", "Price", "Rating"])
+    writer.writerows(data)
+
+print("✅ Data saved to ecommerce_products.csv")
