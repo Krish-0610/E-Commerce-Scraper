@@ -1,5 +1,4 @@
 import time
-import csv
 import json
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -32,7 +31,7 @@ def scrape_ecom(url, search_query):
 
     # Set up Selenium
     chrome_options = Options()
-    # chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-blink-features=AutomationControlled")
     chrome_options.add_argument("user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
 
@@ -60,7 +59,7 @@ def scrape_ecom(url, search_query):
         products = []
         product_elements = driver.find_elements(By.XPATH, product_container_xpath)
 
-        for product in product_elements[:5]:  # Limit results
+        for product in product_elements:  # Limit results
             try:
                 title = product.find_element(By.XPATH, title_xpath).text
                 price = product.find_element(By.XPATH, price_xpath).text
@@ -75,4 +74,3 @@ def scrape_ecom(url, search_query):
 
     finally:
         driver.quit()
-
