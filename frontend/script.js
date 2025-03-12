@@ -62,6 +62,15 @@ document.addEventListener("DOMContentLoaded", function () {
         }
     }
 
+    function downloadData(format) {
+        const timestamp = new Date().getTime(); // Prevent browser caching
+        window.location.href = `http://127.0.0.1:5000/download?format=${format}&t=${timestamp}`;
+    }
+    document.getElementById("csvDownload")?.addEventListener("click", () => downloadData("csv"));
+    document.getElementById("jsonDownload")?.addEventListener("click", () => downloadData("json"));
+    // document.getElementById("xlsxDownload")?.addEventListener("click", () => downloadData("xlsx"));
+
     // Expose function to global scope
     window.searchProducts = searchProducts;
 });
+

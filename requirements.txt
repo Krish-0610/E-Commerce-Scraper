@@ -1,3 +1,5 @@
-flask
-selenium
+Flask
+Selenium
 webdriver-manager
+pandas
+openpyxl
