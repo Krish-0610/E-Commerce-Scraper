@@ -4,7 +4,13 @@
         "product_container": "//div[@data-component-type='s-search-result']",
         "title": ".//h2[@class='a-size-medium a-spacing-none a-color-base a-text-normal']",
         "price": ".//span[@class='a-price-whole']",
-        "rating": ".//div[@class='a-row a-size-base']"
+        "rating": ".//div[@class='a-row a-size-base']",
+        
+        "product_title": ".//span[@id='productTitle']",
+        "product_price": ".//span[@class='a-price-whole']",
+        "product_rating": ".//span[@class='acrCustomerReviewText']"
+
+
     },
     "flipkart": {
         "search_box": "//*[@name='q']",
