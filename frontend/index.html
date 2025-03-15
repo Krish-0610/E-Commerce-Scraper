@@ -28,9 +28,39 @@
         </table>
     </div>
     <div class="download-buttons">
-        <button id="csvDownload"">Download CSV</button>
-        <button id="jsonDownload"">Download JSON</button>
+        <button id="csvDownload">Download CSV</button>
+        <button id="jsonDownload">Download JSON</button>
         <!-- <button id="xlsxDownload"">Download XLSX</button> -->
+    </div>
+    <div class="container">
+        <h1>Real-Time Price Tracker</h1>
+    
+        <h2>Add a Product for Tracking</h2>
+        <input type="text" id="trackProductName" placeholder="Enter product name">
+        <input type="text" id="trackProductUrl" placeholder="Enter product URL">
+        <select id="trackPlatform">
+            <option value="amazon">Amazon</option>
+            <option value="flipkart">Flipkart</option>
+        </select>
+        <input type="number" id="priceThreshold" placeholder="Price Drop Alert (Optional)">
+        <button onclick="trackProduct()">Track Product</button>
+    
+        <h2>Tracked Products</h2>
+        <table id="trackedProductsTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Platform</th>
+                    <th>Current Price</th>
+                    <th>Previous Price</th>
+                    <th>Last Updated</th>
+                    <th>Link</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    
+        <button onclick="updatePrices()">Update Prices</button>
     </div>
     
 
