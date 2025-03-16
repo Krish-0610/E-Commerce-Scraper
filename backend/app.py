@@ -3,7 +3,7 @@ import os
 import sqlite3
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
-from scraper import scrape_ecom
+from scraper import scrape_ecom, scrape_product, get_domain
 
 
 app = Flask(__name__)
@@ -32,7 +32,7 @@ def scrape():
 
     scraped_data = scrape_ecom(url_map[platform], query)
     
-    response = [{"title": item[0], "price": item[1], "rating": item[2]} for item in scraped_data]
+    response = [{"title": item[0], "price": item[1], "rating": item[2], "url": item[3]} for item in scraped_data]
     return jsonify(response)
 
 @app.route("/download", methods=["GET"])
@@ -64,13 +64,11 @@ def track_product():
     data = request.get_json()
     if not data:
         return jsonify({"error": "Invalid JSON"}), 400
-    product_name = data.get("product_name")
-    platform = data.get("platform")
     product_url = data.get("product_url")
     price_threshold = data.get("price_threshold", None)  # Optional threshold
 
     # Scrape initial price
-    scraped_data = scrape_ecom(product_url, product_name)
+    scraped_data = scrape_product(product_url)
     if not scraped_data:
         return jsonify({"error": "Failed to scrape product data"}), 400
 
@@ -79,6 +77,8 @@ def track_product():
     
     # Extract price from first product in the list
     current_price = scraped_data[0][1] if scraped_data else None
+    product_name = scraped_data[0][0] if scraped_data else None
+    platform = get_domain(product_url)
 
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -112,7 +112,7 @@ def update_prices():
 
     for product in products:
         url = product["product_url"]
-        scraped_data = scrape_ecom(url)
+        scraped_data = scrape_product(url)
         if scraped_data:
             new_price = scraped_data[0][1] if scraped_data else None
             cursor.execute('''
