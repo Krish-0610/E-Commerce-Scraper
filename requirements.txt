@@ -1,5 +1,7 @@
 Flask
-Selenium
-webdriver-manager
+flask-cors
+requests
+selenium
 pandas
 openpyxl
+sqlite3
