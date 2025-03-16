@@ -10,7 +10,7 @@ async function searchProducts() {
     }
 
     // Clear previous results
-    resultsTable.innerHTML = "<tr><td colspan='3'>Loading...</td></tr>";
+    resultsTable.innerHTML = "<tr><td colspan='4'>Loading...</td></tr>";
 
     // Prepare request payload
     const requestData = {
@@ -43,22 +43,49 @@ async function searchProducts() {
         resultsTable.innerHTML = "";
 
         if (data.length === 0) {
-            resultsTable.innerHTML = "<tr><td colspan='3'>No results found.</td></tr>";
+            resultsTable.innerHTML = "<tr><td colspan='4'>No results found.</td></tr>";
             return;
+        }
+
+        // Update the table header to include a Track column if it doesn't exist
+        const tableHeader = document.getElementById("resultsTable").getElementsByTagName("thead")[0];
+        if (tableHeader.rows[0].cells.length === 3) {
+            const headerCell = tableHeader.rows[0].insertCell(3);
+            headerCell.textContent = "Actions";
         }
 
         // Populate table with results
         data.forEach(product => {
             const row = resultsTable.insertRow();
             row.innerHTML = `
-                    <td>${product.title || "N/A"}</td>
-                    <td>${product.price || "N/A"}</td>
-                    <td>${product.rating || "N/A"}</td>
-                `;
+                <td>${product.title || "N/A"}</td>
+                <td>${product.price || "N/A"}</td>
+                <td>${product.rating || "N/A"}</td>
+                <td>
+                    <button class="track-btn" data-url="${product.url || ''}" >
+                        Track
+                    </button>
+                </td>
+            `;
+        });
+
+        // Add event listeners to all track buttons
+        document.querySelectorAll('.track-btn').forEach(button => {
+            button.addEventListener('click', function () {
+
+                const productUrl = this.getAttribute('data-url');
+
+
+                // Auto-fill the tracking form
+                document.getElementById("trackProductUrl").value = productUrl;
+
+                // Scroll to the tracking form
+                document.getElementById("trackProductUrl").scrollIntoView({ behavior: "smooth" });
+            });
         });
     } catch (error) {
         console.error("Error:", error);
-        resultsTable.innerHTML = `<tr><td colspan='3' style="color: red;">Error: ${error.message}</td></tr>`;
+        resultsTable.innerHTML = `<tr><td colspan='4' style="color: red;">Error: ${error.message}</td></tr>`;
     }
 }
 
@@ -69,19 +96,25 @@ function downloadData(format) {
 
 async function trackProduct() {
     console.log("Tracking products...")
-    const productName = document.getElementById("trackProductName").value.trim();
-    const platform = document.getElementById("trackPlatform").value;
     const productUrl = document.getElementById("trackProductUrl").value.trim();
     const priceThreshold = document.getElementById("priceThreshold").value || null;
+    const statusElement = document.getElementById("trackingStatus") ||  document.createElement("div")
 
-    if (!productName || !productUrl) {
+    statusElement.id = "trackingStatus";
+    statusElement.className = "tracking-status";
+    statusElement.textContent = "Tracking product... Please wait";
+
+    const formElement = document.getElementById("trackProductForm");
+    if (formElement && !document.getElementById("trackingStatus")) {
+        formElement.parentNode.insertBefore(statusElement, formElement.nextSibling);
+    }
+
+    if (!productUrl) {
         alert("Please enter product name and URL.");
         return;
     }
 
     const requestData = {
-        product_name: productName,
-        platform: platform,
         product_url: productUrl,
         price_threshold: priceThreshold
     };
@@ -96,10 +129,17 @@ async function trackProduct() {
         });
 
         const data = await response.json();
-        alert(data.message || "Product added successfully!");
+        statusElement.textContent = (data.message || "Product added successfully!");
+
         fetchTrackedProducts(); // Refresh list
+
+        // Clear the form fields after successful tracking
+        document.getElementById("trackProductUrl").value = "";
+        document.getElementById("priceThreshold").value = "";
     } catch (error) {
+
         console.error("Error tracking product:", error);
+        statusElement.textContent = "Error tracking product"
     }
 }
 
@@ -129,7 +169,11 @@ async function fetchTrackedProducts() {
 }
 
 // Call fetchTrackedProducts() on page load
-document.addEventListener("DOMContentLoaded", fetchTrackedProducts, searchProducts);
+document.addEventListener("DOMContentLoaded", () => {
+    fetchTrackedProducts();
+    // Note: searchProducts was removed from here as it shouldn't run automatically
+});
+
 document.getElementById("csvDownload")?.addEventListener("click", () => downloadData("csv"));
 document.getElementById("jsonDownload")?.addEventListener("click", () => downloadData("json"));
 
