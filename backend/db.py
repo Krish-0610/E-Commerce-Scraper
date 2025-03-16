@@ -14,8 +14,9 @@ def create_tables():
             product_url TEXT UNIQUE NOT NULL,
             platform TEXT NOT NULL,
             current_price REAL NOT NULL,
-            price_threshold REAL
-            last_checked TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            previous_price REAL,
+            price_threshold REAL,
+            last_updated TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )
     ''')
 
