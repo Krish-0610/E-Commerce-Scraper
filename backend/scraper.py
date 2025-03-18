@@ -127,5 +127,3 @@ def scrape_product(url):
 
     finally:
         driver.quit()
-
-scrape_ecom("https://www.amazon.in/","laptop")

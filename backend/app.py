@@ -49,7 +49,7 @@ def download():
 
     # Save the file in the correct format
     if file_format == "csv":
-        df.to_csv(filepath, index=False, header=["Title", "Price", "Rating"])
+        df.to_csv(filepath, index=False, header=["Title", "Price", "Rating", "Url"])
         mime_type = "text/csv"
     elif file_format == "json":
         df.to_json(filepath, orient="records", lines=True)
