@@ -74,7 +74,7 @@ Since the scraper uses **Selenium**, ensure you have the appropriate WebDriver i
 
 | Home Page | Scraping in Action | Tracking in Action | Extracted Data |
 | --------- | ------------------ | ------------------ | -------------- |
-| ![Homepage](images/home.png) | ![Scraper](images/scraper.png) | ![Tracking](images/tracker.png) | ![Results](images/results.png)|
+| ![Homepage](images/home.png) | ![Scraper](images/scraper.png) | ![Tracking](images/tracker.png) | ![Result](images/result_scraper.png) ![Result](images/result_tracker.png)|
 
 ## 🔧 Future Enhancements
 
