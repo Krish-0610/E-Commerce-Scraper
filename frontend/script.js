@@ -90,8 +90,19 @@ async function searchProducts() {
 }
 
 function downloadData(format) {
-    const timestamp = new Date().getTime(); // Prevent browser caching
-    window.location.href = `http://127.0.0.1:5000/download?format=${format}&t=${timestamp}`;
+    const timestamp = new Date().getTime();
+    
+    // Create an invisible anchor element
+    const link = document.createElement('a');
+    link.href = `http://127.0.0.1:5000/download?format=${format}&t=${timestamp}`;
+    
+    // Optional: set download attribute if you want to force download instead of navigation
+    link.setAttribute('download', '');
+    
+    // Append to document, click it, and remove it
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
 }
 
 async function trackProduct() {

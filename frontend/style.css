@@ -13,26 +13,43 @@ body {
     padding: 20px;
 }
 
-.container {
+header {
     max-width: 1000px;
-    margin: 0 auto 40px;
+    margin: 0 auto 30px;
+    text-align: center;
+}
+
+main {
+    max-width: 1000px;
+    margin: 0 auto;
+}
+
+.container {
     background-color: #fff;
     padding: 25px;
     border-radius: 8px;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    margin-bottom: 40px;
 }
 
 h1 {
-    text-align: center;
-    margin-bottom: 25px;
     color: #2c3e50;
-    font-size: 28px;
+    font-size: 32px;
+    margin-bottom: 10px;
 }
 
 h2 {
     color: #2c3e50;
+    margin-bottom: 20px;
+    font-size: 24px;
+    border-bottom: 2px solid #f0f0f0;
+    padding-bottom: 10px;
+}
+
+h3 {
+    color: #2c3e50;
     margin: 20px 0 15px;
-    font-size: 22px;
+    font-size: 20px;
 }
 
 /* Form Elements */
@@ -49,10 +66,6 @@ button {
 input[type="text"],
 input[type="number"] {
     width: calc(50% - 5px);
-}
-
-input[type="text"]#searchQuery {
-    width: 60%;
 }
 
 select {
@@ -73,7 +86,34 @@ button:hover {
     background-color: #2980b9;
 }
 
+/* Search Section */
+.search-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.search-controls input#searchQuery {
+    flex: 3;
+    min-width: 200px;
+}
+
+.search-controls select {
+    flex: 1;
+    min-width: 120px;
+}
+
+.search-controls button {
+    flex: 1;
+    min-width: 100px;
+}
+
 /* Tables */
+.results-container, .tracked-products {
+    margin-top: 25px;
+}
+
 table {
     width: 100%;
     border-collapse: collapse;
@@ -82,8 +122,7 @@ table {
     box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
 }
 
-th,
-td {
+th, td {
     padding: 12px 15px;
     border-bottom: 1px solid #ddd;
     text-align: left;
@@ -99,62 +138,125 @@ tr:hover {
     background-color: #f8f9fa;
 }
 
-/* Download Buttons */
-.download-buttons {
+/* Download Controls */
+.download-controls {
     display: flex;
-    justify-content: center;
+    justify-content: flex-end;
     gap: 15px;
-    margin-bottom: 40px;
+    margin-top: 20px;
 }
 
-.download-buttons button {
+.download-controls button {
     padding: 10px 20px;
     background-color: #27ae60;
 }
 
-.download-buttons button:hover {
+.download-controls button:hover {
     background-color: #219653;
 }
 
-#jsonDownload {
+.download-controls button#jsonDownload {
     background-color: #e67e22;
 }
 
-#jsonDownload:hover {
+.download-controls button#jsonDownload:hover {
     background-color: #d35400;
 }
 
-/* Price Tracker Section */
+/* Tracking Section */
+.tracking-controls {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 15px;
+}
 
-#trackPlatform,
-#priceThreshold {
-    width: calc(20% - 5px);
+.tracking-controls input#trackProductUrl {
+    flex: 3;
+    min-width: 250px;
+}
+
+.tracking-controls input#priceThreshold {
+    flex: 1;
+    min-width: 150px;
+}
+
+.tracking-controls button {
+    flex: 1;
+    min-width: 120px;
 }
 
 #trackingStatus {
     margin: 10px 0;
-    padding: 8px;
+    padding: 12px;
     border-radius: 4px;
     background-color: #f0f0f0;
+    min-height: 20px; /* Ensures visibility even when empty */
+}
+
+/* Status message styles */
+#trackingStatus.success {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+#trackingStatus.error {
+    background-color: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
+}
+
+#trackingStatus.info {
+    background-color: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+.update-controls {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.update-controls button {
+    background-color: #9b59b6;
+}
+
+.update-controls button:hover {
+    background-color: #8e44ad;
+}
+
+/* Footer */
+footer {
+    max-width: 1000px;
+    margin: 0 auto;
+    text-align: center;
+    padding: 20px 0;
+    color: #7f8c8d;
+    font-size: 14px;
 }
 
 /* Responsive Design */
 @media screen and (max-width: 768px) {
+    .search-controls, .tracking-controls {
+        flex-direction: column;
+        gap: 5px;
+    }
 
-    input[type="text"],
-    input[type="number"],
-    select {
+    .search-controls input, 
+    .search-controls select,
+    .search-controls button,
+    .tracking-controls input,
+    .tracking-controls button {
         width: 100%;
         margin-right: 0;
+        flex: none;
     }
 
-    input[type="text"]#searchQuery {
-        width: 100%;
-    }
-
-    .download-buttons {
+    .download-controls {
         flex-direction: column;
-        align-items: center;
+        align-items: flex-end;
     }
 
     table {
