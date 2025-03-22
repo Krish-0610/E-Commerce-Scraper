@@ -1,3 +1,9 @@
+// Add authentication token to all API calls
+function getAuthHeader() {
+    const token = localStorage.getItem('token');
+    return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
+
 async function searchProducts() {
     console.log("searching products....")
     const query = document.getElementById("searchQuery").value.trim();
@@ -25,7 +31,8 @@ async function searchProducts() {
         const response = await fetch("http://127.0.0.1:5000/scrape", {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                ...getAuthHeader()
             },
             body: JSON.stringify(requestData)
         });
@@ -33,6 +40,10 @@ async function searchProducts() {
         console.log("Received response:", response);
 
         if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = 'login.html';
+                return;
+            }
             throw new Error("Failed to fetch data. Please try again.");
         }
 
@@ -72,13 +83,9 @@ async function searchProducts() {
         // Add event listeners to all track buttons
         document.querySelectorAll('.track-btn').forEach(button => {
             button.addEventListener('click', function () {
-
                 const productUrl = this.getAttribute('data-url');
-
-
                 // Auto-fill the tracking form
                 document.getElementById("trackProductUrl").value = productUrl;
-
                 // Scroll to the tracking form
                 document.getElementById("trackProductUrl").scrollIntoView({ behavior: "smooth" });
             });
@@ -96,7 +103,7 @@ function downloadData(format) {
     const link = document.createElement('a');
     link.href = `http://127.0.0.1:5000/download?format=${format}&t=${timestamp}`;
     
-    // Optional: set download attribute if you want to force download instead of navigation
+    // Add authorization header
     link.setAttribute('download', '');
     
     // Append to document, click it, and remove it
@@ -134,10 +141,19 @@ async function trackProduct() {
         const response = await fetch("http://127.0.0.1:5000/track", {
             method: "POST",
             headers: {
-                "Content-Type": "application/json"
+                "Content-Type": "application/json",
+                ...getAuthHeader()
             },
             body: JSON.stringify(requestData)
         });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = 'login.html';
+                return;
+            }
+            throw new Error("Failed to track product");
+        }
 
         const data = await response.json();
         statusElement.textContent = (data.message || "Product added successfully!");
@@ -148,16 +164,50 @@ async function trackProduct() {
         document.getElementById("trackProductUrl").value = "";
         document.getElementById("priceThreshold").value = "";
     } catch (error) {
-
         console.error("Error tracking product:", error);
         statusElement.textContent = "Error tracking product"
+    }
+}
+
+async function removeProduct(productId) {
+    try {
+        const response = await fetch(`http://127.0.0.1:5000/remove_tracked_product/${productId}`, {
+            method: "DELETE",
+            headers: getAuthHeader()
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = 'login.html';
+                return;
+            }
+            throw new Error("Failed to remove product");
+        }
+
+        const data = await response.json();
+        alert(data.message);
+        fetchTrackedProducts(); // Refresh list after removal
+    } catch (error) {
+        console.error("Error removing product:", error);
+        alert("Failed to remove product. Please try again.");
     }
 }
 
 async function fetchTrackedProducts() {
     console.log("Fetching tracked products....")
     try {
-        const response = await fetch("http://127.0.0.1:5000/tracked_products");
+        const response = await fetch("http://127.0.0.1:5000/tracked_products", {
+            headers: getAuthHeader()
+        });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = 'login.html';
+                return;
+            }
+            throw new Error("Failed to fetch tracked products");
+        }
+
         const products = await response.json();
 
         const tableBody = document.getElementById("trackedProductsTable").getElementsByTagName("tbody")[0];
@@ -172,6 +222,7 @@ async function fetchTrackedProducts() {
                 <td>${product.previous_price || "N/A"}</td>
                 <td>${new Date(product.last_updated).toLocaleString()}</td>
                 <td><a href="${product.product_url}" target="_blank">View</a></td>
+                <td><button class="remove-btn" onclick="removeProduct(${product.id})">Remove</button></td>
             `;
         });
     } catch (error) {
@@ -179,10 +230,14 @@ async function fetchTrackedProducts() {
     }
 }
 
-// Call fetchTrackedProducts() on page load
+// Check authentication on page load
 document.addEventListener("DOMContentLoaded", () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        window.location.href = 'login.html';
+        return;
+    }
     fetchTrackedProducts();
-    // Note: searchProducts was removed from here as it shouldn't run automatically
 });
 
 document.getElementById("csvDownload")?.addEventListener("click", () => downloadData("csv"));
@@ -192,8 +247,17 @@ async function updatePrices() {
     console.log("Updating price....")
     try {
         const response = await fetch("http://127.0.0.1:5000/update_prices", {
-            method: "POST"
+            method: "POST",
+            headers: getAuthHeader()
         });
+
+        if (!response.ok) {
+            if (response.status === 401) {
+                window.location.href = 'login.html';
+                return;
+            }
+            throw new Error("Failed to update prices");
+        }
 
         const data = await response.json();
         alert(data.message);

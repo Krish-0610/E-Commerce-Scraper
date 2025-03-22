@@ -4,4 +4,6 @@ requests
 selenium
 pandas
 openpyxl
-sqlite3
+webdriver-manager
+bcrypt
+PyJWT
