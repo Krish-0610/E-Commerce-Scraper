@@ -5,10 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-commerce Product Scraper & Tracker</title>
     <link rel="stylesheet" href="style.css">
+    <style>
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+        }
+        .logout-btn {
+            padding: 0.5rem 1rem;
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .logout-btn:hover {
+            background-color: #c82333;
+        }
+    </style>
 </head>
 <body>
     <header>
-        <h1>E-commerce Product Scraper & Tracker</h1>
+        <h1>E-commerce Web Scraper</h1>
+        <button class="logout-btn" onclick="logout()">Logout</button>
     </header>
     
     <main>
@@ -69,6 +90,7 @@
                             <th>Previous Price</th>
                             <th>Last Updated</th>
                             <th>Link</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody></tbody>
@@ -82,6 +104,12 @@
     </main>
     
 
+    <script>
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = 'login.html';
+        }
+    </script>
     <script src="script.js"></script>
 </body>
 </html>
