@@ -4,29 +4,46 @@ import sqlite3
 from flask import Flask, request, jsonify, send_file
 from flask_cors import CORS
 from scraper import scrape_ecom, scrape_product, get_domain
-from user import login_user, register_user, verify_token, init_db
+from user import login_user, register_user, verify_token, init_db as init_user_db
+from db import insert_product, get_user_tracked_products, delete_tracked_product, create_tables as init_products_db
 from functools import wraps
 
 app = Flask(__name__)
 CORS(app)
 
-# Initialize the database
-init_db()
-
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         token = request.headers.get('Authorization')
+        print(f"Authorization header: {token}")
+        
         if not token:
+            print("No token provided")
             return jsonify({"error": "Token is missing"}), 401
+            
         try:
-            token = token.split(' ')[1]  # Remove 'Bearer ' prefix
+            # Check if token has 'Bearer ' prefix
+            if ' ' in token:
+                prefix, token = token.split(' ', 1)
+                print(f"Token prefix: {prefix}, Token: {token}")
+                if prefix.lower() != 'bearer':
+                    print(f"Invalid token prefix: {prefix}")
+                    return jsonify({"error": "Invalid token format"}), 401
+            
+            print(f"Processing token: {token[:10]}...")
             success, payload = verify_token(token)
+            
             if not success:
+                print(f"Token verification failed: {payload}")
                 return jsonify({"error": payload}), 401
+                
+            print(f"Token verified successfully for user_id: {payload.get('user_id')}")
+            # Pass user_id to the wrapped function
+            kwargs['user_id'] = payload['user_id']
             return f(*args, **kwargs)
         except Exception as e:
-            return jsonify({"error": "Invalid token"}), 401
+            print(f"Token exception: {str(e)}")
+            return jsonify({"error": f"Invalid token: {str(e)}"}), 401
     return decorated
 
 def get_db_connection():
@@ -69,7 +86,7 @@ def login():
 scraped_data = []
 @app.route('/scrape', methods=['POST'])
 @token_required
-def scrape():
+def scrape(user_id):
     global scraped_data
     data = request.json
     platform = data.get("platform")
@@ -115,18 +132,16 @@ def download():
 
 @app.route("/track", methods=["POST"])
 @token_required
-def track_product():
+def track_product(user_id):
     data = request.get_json()
     if not data:
         return jsonify({"error": "Invalid JSON"}), 400
+    
     product_url = data.get("product_url")
     price_threshold = data.get("price_threshold", None)  # Optional threshold
 
     # Scrape initial price
     scraped_data = scrape_product(product_url)
-    if not scraped_data:
-        return jsonify({"error": "Failed to scrape product data"}), 400
-
     if not scraped_data:
         return jsonify({"error": "Failed to scrape product data"}), 400
     
@@ -135,35 +150,26 @@ def track_product():
     product_name = scraped_data[0][0] if scraped_data else None
     platform = get_domain(product_url)
 
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute('''
-        INSERT OR IGNORE INTO tracked_products (product_name, platform, product_url, current_price, price_threshold)
-        VALUES (?, ?, ?, ?, ?)
-    ''', (product_name, platform, product_url, current_price, price_threshold))
-    conn.commit()
-    conn.close()
+    # Insert product with user_id
+    success = insert_product(user_id, product_name, product_url, platform, current_price, price_threshold)
+    if not success:
+        return jsonify({"error": "Product already being tracked"}), 400
 
     return jsonify({"message": "Product added for tracking!", "current_price": current_price})
 
 @app.route("/tracked_products", methods=["GET"])
 @token_required
-def get_tracked_products():
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute("SELECT * FROM tracked_products")
-    products = cursor.fetchall()
-    conn.close()
-
+def get_tracked_products(user_id):
+    products = get_user_tracked_products(user_id)
     product_list = [dict(row) for row in products]
     return jsonify(product_list)
 
 @app.route("/update_prices", methods=["POST"])
 @token_required
-def update_prices():
+def update_prices(user_id):
     conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("SELECT product_url FROM tracked_products")
+    cursor.execute("SELECT product_url FROM tracked_products WHERE user_id = ?", (user_id,))
     products = cursor.fetchall()
 
     for product in products:
@@ -176,8 +182,8 @@ def update_prices():
                 SET previous_price = current_price, 
                     current_price = ?, 
                     last_updated = CURRENT_TIMESTAMP
-                WHERE product_url = ?
-            ''', (new_price, url))
+                WHERE product_url = ? AND user_id = ?
+            ''', (new_price, url, user_id))
 
     conn.commit()
     conn.close()
@@ -186,22 +192,22 @@ def update_prices():
 
 @app.route("/remove_tracked_product/<int:product_id>", methods=["DELETE"])
 @token_required
-def remove_tracked_product(product_id):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    
-    try:
-        cursor.execute("DELETE FROM tracked_products WHERE id = ?", (product_id,))
-        conn.commit()
-        
-        if cursor.rowcount == 0:
-            return jsonify({"error": "Product not found"}), 404
+def remove_tracked_product(product_id, user_id):
+    success = delete_tracked_product(user_id, product_id)
+    if not success:
+        return jsonify({"error": "Product not found"}), 404
             
-        return jsonify({"message": "Product removed successfully"}), 200
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-    finally:
-        conn.close()
+    return jsonify({"message": "Product removed successfully"}), 200
+
+@app.route("/check-auth", methods=["GET"])
+@token_required
+def check_auth(user_id):
+    """Debug endpoint to check if token authentication is working."""
+    print(f"Auth check successful for user_id: {user_id}")
+    return jsonify({
+        "message": "Authentication successful",
+        "user_id": user_id
+    })
 
 if __name__ == '__main__':
     app.run(debug=True)

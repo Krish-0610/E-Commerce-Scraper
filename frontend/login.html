@@ -66,10 +66,23 @@
     </div>
 
     <script>
+        // Check if already logged in
+        document.addEventListener('DOMContentLoaded', () => {
+            const token = localStorage.getItem('token');
+            if (token) {
+                window.location.href = 'index.html';
+            }
+        });
+
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
+            const loginButton = document.querySelector('#loginForm button');
+            
+            // Disable button during login attempt
+            loginButton.disabled = true;
+            loginButton.textContent = 'Logging in...';
 
             try {
                 const response = await fetch('http://localhost:5000/login', {
@@ -81,16 +94,28 @@
                 });
 
                 const data = await response.json();
+                console.log("Login response:", data);
 
                 if (response.ok) {
+                    // Store token without Bearer prefix - this will be added when making requests
                     localStorage.setItem('token', data.token);
-                    window.location.href = 'index.html';
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    console.log('Token saved:', data.token);
+                    
+                    // Redirect after a short delay to ensure token is saved
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 100);
                 } else {
                     alert(data.error || 'Login failed');
+                    loginButton.disabled = false;
+                    loginButton.textContent = 'Login';
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('An error occurred during login');
+                alert('An error occurred during login. Please try again.');
+                loginButton.disabled = false;
+                loginButton.textContent = 'Login';
             }
         });
     </script>

@@ -1,7 +1,36 @@
 // Add authentication token to all API calls
 function getAuthHeader() {
     const token = localStorage.getItem('token');
+    console.log("Using token:", token);
     return token ? { 'Authorization': `Bearer ${token}` } : {};
+}
+
+// Handle unauthorized responses
+function handleUnauthorized() {
+    console.log("Unauthorized access detected, redirecting to login");
+    localStorage.removeItem('token');  // Clear invalid token
+    localStorage.removeItem('user');   // Clear user data
+    window.location.href = 'login.html';
+}
+
+// Check if user is authenticated
+function isAuthenticated() {
+    const token = localStorage.getItem('token');
+    return token !== null && token !== undefined;
+}
+
+// Validate response for 401 errors
+async function handleApiResponse(response) {
+    if (response.status === 401) {
+        handleUnauthorized();
+        throw new Error("Unauthorized access");
+    }
+    if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.error || `Server error: ${response.status}`;
+        throw new Error(errorMessage);
+    }
+    return response.json();
 }
 
 async function searchProducts() {
@@ -39,15 +68,7 @@ async function searchProducts() {
 
         console.log("Received response:", response);
 
-        if (!response.ok) {
-            if (response.status === 401) {
-                window.location.href = 'login.html';
-                return;
-            }
-            throw new Error("Failed to fetch data. Please try again.");
-        }
-
-        const data = await response.json();
+        const data = await handleApiResponse(response);
         console.log("Received data:", data);
 
         // Clear loading text
@@ -147,15 +168,7 @@ async function trackProduct() {
             body: JSON.stringify(requestData)
         });
 
-        if (!response.ok) {
-            if (response.status === 401) {
-                window.location.href = 'login.html';
-                return;
-            }
-            throw new Error("Failed to track product");
-        }
-
-        const data = await response.json();
+        const data = await handleApiResponse(response);
         statusElement.textContent = (data.message || "Product added successfully!");
 
         fetchTrackedProducts(); // Refresh list
@@ -176,15 +189,7 @@ async function removeProduct(productId) {
             headers: getAuthHeader()
         });
 
-        if (!response.ok) {
-            if (response.status === 401) {
-                window.location.href = 'login.html';
-                return;
-            }
-            throw new Error("Failed to remove product");
-        }
-
-        const data = await response.json();
+        const data = await handleApiResponse(response);
         alert(data.message);
         fetchTrackedProducts(); // Refresh list after removal
     } catch (error) {
@@ -194,26 +199,33 @@ async function removeProduct(productId) {
 }
 
 async function fetchTrackedProducts() {
-    console.log("Fetching tracked products....")
+    console.log("Fetching tracked products....");
+    
+    // Debug: Check if token exists and print headers that will be sent
+    const token = localStorage.getItem('token');
+    console.log("Token in localStorage:", token);
+    console.log("Auth headers being sent:", getAuthHeader());
+    
     try {
         const response = await fetch("http://127.0.0.1:5000/tracked_products", {
+            method: "GET",
             headers: getAuthHeader()
         });
-
-        if (!response.ok) {
-            if (response.status === 401) {
-                window.location.href = 'login.html';
-                return;
-            }
-            throw new Error("Failed to fetch tracked products");
-        }
-
-        const products = await response.json();
+        
+        console.log("Response status:", response.status);
+        
+        const data = await handleApiResponse(response);
+        console.log("Tracked products data:", data);
 
         const tableBody = document.getElementById("trackedProductsTable").getElementsByTagName("tbody")[0];
         tableBody.innerHTML = "";
 
-        products.forEach(product => {
+        if (data.length === 0) {
+            tableBody.innerHTML = "<tr><td colspan='7'>No products tracked yet.</td></tr>";
+            return;
+        }
+
+        data.forEach(product => {
             const row = tableBody.insertRow();
             row.innerHTML = `
                 <td>${product.product_name}</td>
@@ -227,17 +239,39 @@ async function fetchTrackedProducts() {
         });
     } catch (error) {
         console.error("Error fetching tracked products:", error);
+        const tableBody = document.getElementById("trackedProductsTable").getElementsByTagName("tbody")[0];
+        tableBody.innerHTML = `<tr><td colspan="7" style="color: red;">Error: ${error.message}</td></tr>`;
     }
 }
 
 // Check authentication on page load
 document.addEventListener("DOMContentLoaded", () => {
-    const token = localStorage.getItem('token');
-    if (!token) {
+    console.log("DOM loaded, checking authentication...");
+    if (!isAuthenticated()) {
+        console.log("No token found, redirecting to login");
         window.location.href = 'login.html';
         return;
     }
-    fetchTrackedProducts();
+    
+    // Test authentication is working
+    console.log("Token found, testing authentication...");
+    fetch("http://127.0.0.1:5000/check-auth", {
+        headers: getAuthHeader()
+    })
+    .then(response => {
+        console.log("Auth check response:", response.status);
+        return handleApiResponse(response);
+    })
+    .then(data => {
+        console.log("Authentication successful:", data);
+        fetchTrackedProducts();
+    })
+    .catch(error => {
+        console.error("Authentication error:", error);
+        if (error.message.includes("Unauthorized")) {
+            handleUnauthorized();
+        }
+    });
 });
 
 document.getElementById("csvDownload")?.addEventListener("click", () => downloadData("csv"));
@@ -251,15 +285,7 @@ async function updatePrices() {
             headers: getAuthHeader()
         });
 
-        if (!response.ok) {
-            if (response.status === 401) {
-                window.location.href = 'login.html';
-                return;
-            }
-            throw new Error("Failed to update prices");
-        }
-
-        const data = await response.json();
+        const data = await handleApiResponse(response);
         alert(data.message);
         fetchTrackedProducts(); // Refresh list after update
     } catch (error) {
