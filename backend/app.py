@@ -11,6 +11,7 @@ from functools import wraps
 app = Flask(__name__)
 CORS(app)
 
+
 def token_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
@@ -210,4 +211,6 @@ def check_auth(user_id):
     })
 
 if __name__ == '__main__':
+    init_user_db()
+    init_products_db()
     app.run(debug=True)
